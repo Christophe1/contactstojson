@@ -20,6 +20,8 @@ android {
 }
 
 dependencies {
+    //this is the volley library
+    compile 'com.android.volley:volley:1.0.0'
     compile fileTree(include: ['*.jar'], dir: 'libs')
    // compile 'com.googlecode.libphonenumber:libphonenumber:7.2.2'
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
