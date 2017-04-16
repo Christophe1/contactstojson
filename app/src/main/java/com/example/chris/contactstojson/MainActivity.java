@@ -10,9 +10,11 @@ import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -32,10 +34,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
     // this is the php file name where to select from the database, the user's phone number
-    private static final String CHECKPHONENUMBER_URL = "http://www.populisto.com/check_if_contact_is_a_user.php";
+    private static final String CHECKPHONENUMBER_URL = "http://www.populisto.com/checkcontact.php";
 
     //we are posting phoneNo, which in PHP is phonenumber
     public static final String KEY_PHONENUMBER = "phonenumber";
@@ -43,13 +45,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button buttonCheck;
     String phoneNo;
 
+    EditText editNo;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button buttonCheck = (Button) findViewById(R.id.buttonCheck);
-        buttonCheck.setOnClickListener(this);
+         buttonCheck = (Button) findViewById(R.id.buttonCheck);
+
+        editNo = (EditText) findViewById(R.id.editNo);
 
         //get the names and phone numbers of all contacts in phone book
         ContentResolver cr = getContentResolver();
@@ -104,35 +109,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
+
+        //I need to check if a contact in the user's phone contacts is already a user of populisto.
+        //If yes, then in the contacts table put in the user's user_id
+        //and the contact's user id in contacts_id
+
+        buttonCheck.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                System.out.println("you clicked it");
+                phoneNo = editNo.getText().toString();
+             //    phoneNo = "545774";
+                 CheckifUserisContact();
+            }
+        });
+
     }
 
-    //I need to check if a contact in the user's phone contacts is already a user of populisto.
-    //If yes, then in the contacts table put in the user's user_id
-    //and the contact's user id in contacts_id
-
-
-    @Override
-    public void onClick(View v) {
-        phoneNo = "+353864677745";
-        if (v == buttonCheck) {
-            CheckifUserisContact();
-        }
-    }
 
 
     private void CheckifUserisContact() {
 
         StringRequest stringRequest = new StringRequest(Request.Method.POST, CHECKPHONENUMBER_URL,
                 new Response.Listener<String>() {
-
                     @Override
                     public void onResponse(String response) {
-                        if (response.equals("success")) {
-                            Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
+                        if (response.equals("failure")) {
+                            Toast.makeText(MainActivity.this, "failed", Toast.LENGTH_LONG).show();
                         } else {
-                            Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "succeeded", Toast.LENGTH_LONG).show();
                         }
-
                     }
                 },
                 new Response.ErrorListener() {
@@ -144,10 +149,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 }) {
             @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put(KEY_PHONENUMBER, phoneNo);
-                return params;
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put(KEY_PHONENUMBER, phoneNo);
+                return map;
             }
 
         };
