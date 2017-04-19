@@ -19,6 +19,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.appdatasearch.GetRecentContextCall;
@@ -30,6 +31,10 @@ import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
 
     //we are posting phoneNo, which in PHP is phonenumber
     public static final String KEY_PHONENUMBER = "phonenumber";
+
+    //alContacts is a list of all the phone numbers
+    public static final ArrayList<String> alContacts = new ArrayList<String>();
 
     Button buttonCheck;
     String phoneNo;
@@ -56,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
 
         editNo = (EditText) findViewById(R.id.editNo);
 
+
+
         //get the names and phone numbers of all contacts in phone book
         ContentResolver cr = getContentResolver();
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
@@ -63,6 +73,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (cur.getCount() > 0) {
             while (cur.moveToNext()) {
+
+
                 String id = cur.getString(
                         cur.getColumnIndex(ContactsContract.Contacts._ID));
                 String name = cur.getString(cur.getColumnIndex(
@@ -104,11 +116,17 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println("Name: " + name);
                         System.out.println("Phone No: " + phoneNo);
 
+                        alContacts.add(phoneNo);
+                       // break;
                     }
                     pCur.close();
+
                 }
             }
         }
+
+        System.out.println("Print the contacts array : ");
+        System.out.println(alContacts);
 
         //I need to check if a contact in the user's phone contacts is already a user of populisto.
         //If yes, then in the contacts table put in the user's user_id
@@ -116,8 +134,10 @@ public class MainActivity extends AppCompatActivity {
 
         buttonCheck.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                System.out.println("you clicked it");
-                phoneNo = editNo.getText().toString();
+                System.out.println("Print the contacts array : ");
+                System.out.println(alContacts);
+               // System.out.println("you clicked it");
+              //  phoneNo = editNo.getText().toString();
              //    phoneNo = "545774";
                  CheckifUserisContact();
             }
@@ -148,16 +168,25 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }) {
+          //  JSONObject jsonObject=new JSONObject();
+            JSONArray jsonArray = new JSONArray();
+          //  jsonObject.put("alContacts",jsonArray);
+            for(int i=0;i<=alContacts.size;i++){}
+
             @Override
             protected Map<String, String> getParams() throws AuthFailureError {
-                Map<String, String> map = new HashMap<String, String>();
-                map.put(KEY_PHONENUMBER, phoneNo);
-                return map;
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(KEY_PHONENUMBER, jsonArray.toString());
+                return params;
+
+              //  JsonObjectRequest request_json = new JsonObjectRequest(CHECKPHONENUMBER_URL, new JSONObject(map);
+
             }
 
         };
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(stringRequest);
+
 
     }
 }
