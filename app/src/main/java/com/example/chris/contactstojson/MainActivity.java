@@ -8,6 +8,7 @@ import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -32,8 +33,8 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,9 +52,6 @@ public class MainActivity extends AppCompatActivity {
     public static final ArrayList<String> alContacts = new ArrayList<String>();
 
     Button buttonCheck;
-    String phoneNo;
-
-    EditText editNo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,10 +59,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
          buttonCheck = (Button) findViewById(R.id.buttonCheck);
-
-        editNo = (EditText) findViewById(R.id.editNo);
-
-
 
         //get the names and phone numbers of all contacts in phone book
         ContentResolver cr = getContentResolver();
@@ -77,8 +71,6 @@ public class MainActivity extends AppCompatActivity {
 
                 String id = cur.getString(
                         cur.getColumnIndex(ContactsContract.Contacts._ID));
-                String name = cur.getString(cur.getColumnIndex(
-                        ContactsContract.Contacts.DISPLAY_NAME));
 
                 if (cur.getInt(cur.getColumnIndex(
                         ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
@@ -90,31 +82,6 @@ public class MainActivity extends AppCompatActivity {
                     while (pCur.moveToNext()) {
                         String phoneNo = pCur.getString(pCur.getColumnIndex(
                                 ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        //replace numbers starting with 00 with +
-                        if (phoneNo.startsWith("00")) {
-                            System.out.println(phoneNo = phoneNo.replaceFirst("00", "+"));
-                        }
-                        // remove splaces between phone numbers
-                        phoneNo = phoneNo.replaceAll("\\s+", "");
-
-                        //all phone numbers not starting with +, make them E.164 format,
-                        //for Irish phones
-                        if (!phoneNo.startsWith("+")) {
-
-
-                            PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
-                            try {
-                                Phonenumber.PhoneNumber numberProto = phoneUtil.parse(phoneNo, "IE");
-                                phoneNo = phoneUtil.format(numberProto, PhoneNumberUtil.PhoneNumberFormat.E164);
-                                //Since you know the country you can format it as follows:
-                                //System.out.println(phoneUtil.format(numberProto, PhoneNumberUtil.PhoneNumberFormat.E164));
-                            } catch (NumberParseException e) {
-                                System.err.println("NumberParseException was thrown: " + e.toString());
-                            }
-                        }
-
-                        System.out.println("Name: " + name);
-                        System.out.println("Phone No: " + phoneNo);
 
                         alContacts.add(phoneNo);
                        // break;
@@ -125,20 +92,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        System.out.println("Print the contacts array : ");
-        System.out.println(alContacts);
-
-        //I need to check if a contact in the user's phone contacts is already a user of populisto.
-        //If yes, then in the contacts table put in the user's user_id
-        //and the contact's user id in contacts_id
-
         buttonCheck.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                System.out.println("Print the contacts array : ");
-                System.out.println(alContacts);
-               // System.out.println("you clicked it");
-              //  phoneNo = editNo.getText().toString();
-             //    phoneNo = "545774";
+              //  System.out.println("Print the contacts array : ");
+               // System.out.println(alContacts);
+
                  CheckifUserisContact();
             }
         });
@@ -153,12 +111,33 @@ public class MainActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        if (response.equals("failure")) {
-                            Toast.makeText(MainActivity.this, "failed", Toast.LENGTH_LONG).show();
-                        } else {
-                            Toast.makeText(MainActivity.this, "succeeded", Toast.LENGTH_LONG).show();
-                        }
-                    }
+
+                        try {
+                            JSONObject dataToSend = new JSONObject();
+
+                            // contacts
+                            JSONArray jsonArrayContacts = new JSONArray();
+                            //alContacts is our arraylist with all the phone numbers
+                            for (int i = 0; i < alContacts.size(); i++)
+                            {
+                          // make each contact in alContacts into an individual JSON object called jsonObjectContact
+                                JSONObject jsonObjectContact = new JSONObject();
+                                // jsonObjectContact will be of the form {"phone_number":"123456789"}
+                                jsonObjectContact.put("phone_number", alContacts.get(i));
+
+                                // Add jsonObjectContact to contacts jsonArray
+                                jsonArrayContacts.put(jsonObjectContact);
+                            }
+
+                            // Add contacts jsonArray to jsonObject dataToSend
+                            dataToSend.put("contacts", jsonArrayContacts);
+
+                           // Log.e("JSON", "JSON: " + dataToSend.toString());
+                            System.out.println("JSON: " + dataToSend.toString());
+
+                        } catch (final JSONException e) {
+                            Log.e("FAILED", "Json parsing error: " + e.getMessage());
+                        } }
                 },
                 new Response.ErrorListener() {
                     @Override
@@ -168,20 +147,13 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }) {
-          //  JSONObject jsonObject=new JSONObject();
-            JSONArray jsonArray = new JSONArray();
-          //  jsonObject.put("alContacts",jsonArray);
-            for(int i=0;i<=alContacts.size;i++){}
 
-            @Override
+      /*      @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<String, String>();
-                params.put(KEY_PHONENUMBER, jsonArray.toString());
-                return params;
+                params.put(KEY_PHONENUMBER,);
+                return params;*/
 
-              //  JsonObjectRequest request_json = new JsonObjectRequest(CHECKPHONENUMBER_URL, new JSONObject(map);
-
-            }
 
         };
         RequestQueue requestQueue = Volley.newRequestQueue(this);
