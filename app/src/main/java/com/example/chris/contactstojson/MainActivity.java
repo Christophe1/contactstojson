@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -20,6 +21,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -40,10 +42,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     // this is the php file name where to select from the database, the user's phone number
-    private static final String CHECKPHONENUMBER_URL = "http://www.populisto.com/checkcontact.php";
+   // private static final String CHECKPHONENUMBER_URL = "http://www.populisto.com/phone_number.json";
 
     //we are posting phoneNo, which in PHP is phonenumber
     public static final String KEY_PHONENUMBER = "phonenumber";
@@ -52,16 +54,22 @@ public class MainActivity extends AppCompatActivity {
     public static final ArrayList<String> alContacts = new ArrayList<String>();
 
     Button buttonCheck;
+    //for experimentation purposes
+    TextView textView;
+    RequestQueue requestQueue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-         buttonCheck = (Button) findViewById(R.id.buttonCheck);
+        buttonCheck = (Button) findViewById(R.id.buttonCheck);
+        textView = (TextView) findViewById(R.id.textView);
+        requestQueue = Volley.newRequestQueue(this);
+
 
         //get the names and phone numbers of all contacts in phone book
-        ContentResolver cr = getContentResolver();
+    /*    ContentResolver cr = getContentResolver();
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
                 null, null, null, null);
 
@@ -84,69 +92,64 @@ public class MainActivity extends AppCompatActivity {
                                 ContactsContract.CommonDataKinds.Phone.NUMBER));
 
                         alContacts.add(phoneNo);
-                       // break;
+                        // break;
                     }
                     pCur.close();
 
                 }
             }
-        }
+        }*/
 
         buttonCheck.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-              //  System.out.println("Print the contacts array : ");
-               // System.out.println(alContacts);
+            public void onClick(View v) {
+                //  System.out.println("Print the contacts array : ");
+                // System.out.println(alContacts);
 
-                 CheckifUserisContact();
-            }
-        });
+                //CheckifUserisContact();
 
-    }
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, "http://populisto.com/phone_number.json", (JSONObject) null,
 
 
+                        //StringRequest stringRequest = new StringRequest(Request.Method.POST, CHECKPHONENUMBER_URL,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
 
-    private void CheckifUserisContact() {
+                                try {
 
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, CHECKPHONENUMBER_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
+                                    JSONArray jsonArray = new JSONArray();
+                                   // JSONArray jsonArray = response.getJSONArray();
 
-                        try {
-                            JSONObject dataToSend = new JSONObject();
+                                    for (int i = 0; i < jsonArray.length(); i++) {
+                                        JSONObject contact = jsonArray.getJSONObject(i);
 
-                            // contacts
-                            JSONArray jsonArrayContacts = new JSONArray();
-                            //alContacts is our arraylist with all the phone numbers
-                            for (int i = 0; i < alContacts.size(); i++)
-                            {
-                          // make each contact in alContacts into an individual JSON object called jsonObjectContact
-                                JSONObject jsonObjectContact = new JSONObject();
-                                // jsonObjectContact will be of the form {"phone_number":"123456789"}
-                                jsonObjectContact.put("phone_number", alContacts.get(i));
+                                        String phonenumber = contact.getString("phone_number");
+                                        textView.append(phonenumber + " \n");
 
-                                // Add jsonObjectContact to contacts jsonArray
-                                jsonArrayContacts.put(jsonObjectContact);
+
+                                    }
+
+                                } catch (JSONException e) {
+
+                                    e.printStackTrace();
+                                }
                             }
 
-                            // Add contacts jsonArray to jsonObject dataToSend
-                            dataToSend.put("contacts", jsonArrayContacts);
+                        },
 
-                           // Log.e("JSON", "JSON: " + dataToSend.toString());
-                            System.out.println("JSON: " + dataToSend.toString());
 
-                        } catch (final JSONException e) {
-                            Log.e("FAILED", "Json parsing error: " + e.getMessage());
-                        } }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                  Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                               // Log.e("Volley", "Error");
+                            }
 
-                    }
-
-                }) {
+                        }
+                );
+                //RequestQueue requestQueue = Volley.newRequestQueue(this);
+                requestQueue.add(jsonObjectRequest);
+            }
 
       /*      @Override
             protected Map<String, String> getParams() throws AuthFailureError {
@@ -154,12 +157,21 @@ public class MainActivity extends AppCompatActivity {
                 params.put(KEY_PHONENUMBER,);
                 return params;*/
 
+        });
+        }}
+        // RequestQueue requestQueue = Volley.newRequestQueue(this);
+        // requestQueue.add(jsonObjectRequest);
 
-        };
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        requestQueue.add(stringRequest);
 
 
-    }
-}
+
+
+
+
+  //  private void CheckifUserisContact() {
+
+
+
+
+
 
