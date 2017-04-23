@@ -41,11 +41,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+public class MainActivity extends AppCompatActivity {
 
-public class MainActivity extends Activity {
-
-    // this is the php file name where to select from the database, the user's phone number
-   // private static final String CHECKPHONENUMBER_URL = "http://www.populisto.com/phone_number.json";
+    // this is the php file we are contacting with Volley
+    private static final String CHECKPHONENUMBER_URL = "http://www.populisto.com/checkcontact.php";
 
     //we are posting phoneNo, which in PHP is phonenumber
     public static final String KEY_PHONENUMBER = "phonenumber";
@@ -53,10 +52,11 @@ public class MainActivity extends Activity {
     //alContacts is a list of all the phone numbers
     public static final ArrayList<String> alContacts = new ArrayList<String>();
 
+    JSONObject jsonObjectContact = new JSONObject();
+
     Button buttonCheck;
-    //for experimentation purposes
     TextView textView;
-    RequestQueue requestQueue;
+    String phoneNo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,15 +65,15 @@ public class MainActivity extends Activity {
 
         buttonCheck = (Button) findViewById(R.id.buttonCheck);
         textView = (TextView) findViewById(R.id.textView);
-        requestQueue = Volley.newRequestQueue(this);
+
 
 
         //get the names and phone numbers of all contacts in phone book
-    /*    ContentResolver cr = getContentResolver();
+        ContentResolver cr = getContentResolver();
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
                 null, null, null, null);
 
-        if (cur.getCount() > 0) {
+        if (cur.moveToFirst()) {
             while (cur.moveToNext()) {
 
 
@@ -88,7 +88,7 @@ public class MainActivity extends Activity {
                             ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
                             new String[]{id}, null);
                     while (pCur.moveToNext()) {
-                        String phoneNo = pCur.getString(pCur.getColumnIndex(
+                        phoneNo = pCur.getString(pCur.getColumnIndex(
                                 ContactsContract.CommonDataKinds.Phone.NUMBER));
 
                         alContacts.add(phoneNo);
@@ -98,80 +98,70 @@ public class MainActivity extends Activity {
 
                 }
             }
-        }*/
+        }
 
         buttonCheck.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                //  System.out.println("Print the contacts array : ");
-                // System.out.println(alContacts);
+            public void onClick(View view) {
 
-                //CheckifUserisContact();
-
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, "http://populisto.com/phone_number.json", (JSONObject) null,
+                try {
 
 
-                        //StringRequest stringRequest = new StringRequest(Request.Method.POST, CHECKPHONENUMBER_URL,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
+                    //put all phone contacts into jsonObjectContact
+                    for (int i = 0; i < alContacts.size(); i++)
+                    {
+                        // jsonObjectContact will be of the form {"phone_number":"123456789"}
+                        jsonObjectContact.put("phone_number", alContacts.get(i));
 
-                                try {
+                        textView.append(jsonObjectContact + " \n");
 
-                                    JSONArray jsonArray = new JSONArray();
-                                   // JSONArray jsonArray = response.getJSONArray();
+                        System.out.println("JSON: " + jsonObjectContact);
+                    }
 
-                                    for (int i = 0; i < jsonArray.length(); i++) {
-                                        JSONObject contact = jsonArray.getJSONObject(i);
+                } catch (final JSONException e) {
+                    Log.e("FAILED", "Json parsing error: " + e.getMessage());
+                }
 
-                                        String phonenumber = contact.getString("phone_number");
-                                        textView.append(phonenumber + " \n");
+                CheckifUserisContact();
+            }
+        });
 
-
-                                    }
-
-                                } catch (JSONException e) {
-
-                                    e.printStackTrace();
-                                }
-                            }
-
-                        },
+    }
 
 
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                  Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
-                               // Log.e("Volley", "Error");
-                            }
+
+    private void CheckifUserisContact() {
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, CHECKPHONENUMBER_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
 
                         }
-                );
-                //RequestQueue requestQueue = Volley.newRequestQueue(this);
-                requestQueue.add(jsonObjectRequest);
-            }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
 
-      /*      @Override
+                    }
+
+                }) {
+
+         @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<String, String>();
-                params.put(KEY_PHONENUMBER,);
-                return params;*/
-
-        });
-        }}
-        // RequestQueue requestQueue = Volley.newRequestQueue(this);
-        // requestQueue.add(jsonObjectRequest);
+             //The KEY, KEY_PHONENUMBER = "phonenumber" . In PHP we will have $_POST["phonenumber"]
+             //The VALUE, phonenumber, will be of the form "12345678"
+                params.put(KEY_PHONENUMBER,jsonObjectContact.toString());
+                System.out.println("contact is : " + jsonObjectContact);
+                return params;
 
 
+        }
+        };
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
 
 
-
-
-
-  //  private void CheckifUserisContact() {
-
-
-
-
-
-
+    }
+}
