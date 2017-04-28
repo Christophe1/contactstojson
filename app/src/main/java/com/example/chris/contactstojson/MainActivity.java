@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -38,7 +39,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -52,11 +56,14 @@ public class MainActivity extends AppCompatActivity {
     //alContacts is a list of all the phone numbers
     public static final ArrayList<String> alContacts = new ArrayList<String>();
 
-    JSONObject jsonObjectContact = new JSONObject();
+   // JSONObject dataToSend = new JSONObject();
+    JSONArray jsonArrayContacts = new JSONArray();
+
 
     Button buttonCheck;
     TextView textView;
     String phoneNo;
+    //String the_contacts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,31 +98,52 @@ public class MainActivity extends AppCompatActivity {
                         phoneNo = pCur.getString(pCur.getColumnIndex(
                                 ContactsContract.CommonDataKinds.Phone.NUMBER));
 
-                        alContacts.add(phoneNo);
+                        if(!alContacts.contains(phoneNo))
+                            alContacts.add(phoneNo);
                         // break;
                     }
+
+
+
+                    //alContacts.add(phoneNo);
                     pCur.close();
 
                 }
+               // System.out.println("the amount of phoneNo is :" + pCur.getCount());
+                 System.out.println("the amount of phoneNo is :" + cur.getCount());
+                System.out.println("the amount of alContacts is :" + alContacts.size());
+
             }
+
+
         }
 
         buttonCheck.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
 
                 try {
+                  //  JSONObject dataToSend = new JSONObject();
 
-
-                    //put all phone contacts into jsonObjectContact
+                    // contacts
+                  //  JSONArray jsonArrayContacts = new JSONArray();
+                    //alContacts is our arraylist with all the phone numbers
                     for (int i = 0; i < alContacts.size(); i++)
                     {
+                        // make each contact in alContacts into an individual JSON object called jsonObjectContact
+                        JSONObject jsonObjectContact = new JSONObject();
                         // jsonObjectContact will be of the form {"phone_number":"123456789"}
                         jsonObjectContact.put("phone_number", alContacts.get(i));
 
-                        textView.append(jsonObjectContact + " \n");
+                        // Add jsonObjectContact to contacts jsonArray
+                        jsonArrayContacts.put(jsonObjectContact);
 
-                        System.out.println("JSON: " + jsonObjectContact);
                     }
+                    System.out.println("the amount in alContacts :" + alContacts.size());
+                    // Add contacts jsonArray to jsonObject dataToSend
+                   // dataToSend.put("contacts", jsonArrayContacts);
+
+                    System.out.println("JSONarraycontacts: " + jsonArrayContacts.toString());
+                    //System.out.println("JSON object datatoSend: " + dataToSend.toString());
 
                 } catch (final JSONException e) {
                     Log.e("FAILED", "Json parsing error: " + e.getMessage());
@@ -135,8 +163,10 @@ public class MainActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
+                        Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
+                        textView.append(response + " \n");
 
-                        }
+                    }
                 },
                 new Response.ErrorListener() {
                     @Override
@@ -147,13 +177,16 @@ public class MainActivity extends AppCompatActivity {
 
                 }) {
 
+
+
          @Override
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<String, String>();
              //The KEY, KEY_PHONENUMBER = "phonenumber" . In PHP we will have $_POST["phonenumber"]
              //The VALUE, phonenumber, will be of the form "12345678"
-                params.put(KEY_PHONENUMBER,jsonObjectContact.toString());
-                System.out.println("contact is : " + jsonObjectContact);
+                params.put(KEY_PHONENUMBER,jsonArrayContacts.toString());
+                System.out.println(Collections.singletonList(params));
+               //System.out.println("contact is : " + jsonArrayContacts);
                 return params;
 
 
